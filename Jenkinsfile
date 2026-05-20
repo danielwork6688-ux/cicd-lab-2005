@@ -46,29 +46,29 @@ pipeline {
             }
         }
 
-        stage('CD: Deploy to App Server') {
-            steps {
-                sshagent(['appserver-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no $APP_USER@$APP_SERVER "
-                            docker pull danielwork6688/django-todo-app:latest
+stage('CD: Deploy to App Server') {
+    steps {
+        sshagent(['appserver-ssh-key']) {
+            sh """
+                ssh -o StrictHostKeyChecking=no ${APP_USER}@${APP_SERVER} '
+                    docker pull danielwork6688/django-todo-app:latest
 
-                            docker stop todo-app 2>/dev/null || true
-                            docker rm todo-app 2>/dev/null || true
+                    docker stop todo-app 2>/dev/null || true
+                    docker rm todo-app 2>/dev/null || true
 
-                            docker run -d \
-                                --name todo-app \
-                                --restart unless-stopped \
-                                -p 127.0.0.1:8000:8000 \
-                                YOUR_DOCKERHUB_USERNAME/django-todo-app:latest
+                    docker run -d \
+                        --name todo-app \
+                        --restart unless-stopped \
+                        -p 127.0.0.1:8000:8000 \
+                        danielwork6688/django-todo-app:latest
 
-                            docker image prune -f
-                            echo 'Deploy xong!'
-                        "
-                    '''
-                }
-            }
+                    docker image prune -f
+                    echo Deploy xong!
+                '
+            """
         }
+    }
+}
     }
 
     post {
