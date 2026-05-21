@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE  = "danielwork6688/django-todo-app"
+        DOCKER_IMAGE   = "danielwork6688/django-todo-app"
         ANSIBLE_SERVER = "20.195.40.198"
         ANSIBLE_USER   = "azureuser"
     }
@@ -50,6 +50,8 @@ pipeline {
             steps {
                 sshagent(['ansible-ssh-key']) {
                     sh """
+                        scp -o StrictHostKeyChecking=no -r ansible/ ${ANSIBLE_USER}@${ANSIBLE_SERVER}:~/ansible/
+
                         ssh -o StrictHostKeyChecking=no ${ANSIBLE_USER}@${ANSIBLE_SERVER} '
                             cd ~/ansible
                             ansible-playbook playbooks/deploy.yml

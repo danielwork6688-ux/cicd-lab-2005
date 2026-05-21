@@ -1,0 +1,61 @@
+---
+- name: Provision App Server
+  hosts: appserver
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Cài Docker
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Thêm azureuser vào group docker
+      user:
+        name: azureuser
+        groups: docker
+        append: yes
+
+    - name: Cài Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Copy Nginx config
+      copy:
+        dest: /etc/nginx/sites-available/django-todo
+        content: |
+          server {
+              listen 80;
+              server_name 4.194.234.196;
+
+              location /static/ {
+                  alias /home/azureuser/staticfiles/;
+              }
+
+              location / {
+                  proxy_pass http://127.0.0.1:8000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+              }
+          }
+
+    - name: Kích hoạt Nginx config
+      file:
+        src: /etc/nginx/sites-available/django-todo
+        dest: /etc/nginx/sites-enabled/django-todo
+        state: link
+
+    - name: Xóa Nginx default config
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes

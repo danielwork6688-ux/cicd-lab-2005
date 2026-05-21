@@ -1,0 +1,32 @@
+---
+- name: Deploy Django App
+  hosts: appserver
+  become: true
+
+  vars:
+    docker_image: "danielwork6688/django-todo-app:latest"
+    container_name: "todo-app"
+    container_port: "127.0.0.1:8000:8000"
+
+  tasks:
+    - name: Pull image mới nhất
+      shell: docker pull {{ docker_image }}
+
+    - name: Stop container cũ
+      shell: docker stop {{ container_name }}
+      ignore_errors: yes
+
+    - name: Remove container cũ
+      shell: docker rm {{ container_name }}
+      ignore_errors: yes
+
+    - name: Run container mới
+      shell: |
+        docker run -d \
+          --name {{ container_name }} \
+          --restart unless-stopped \
+          -p {{ container_port }} \
+          {{ docker_image }}
+
+    - name: Dọn image cũ
+      shell: docker image prune -f
