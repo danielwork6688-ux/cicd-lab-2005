@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "danielwork6688/django-todo-app"
-        APP_SERVER   = "4.194.234.196"
-        APP_USER     = "azureuser"
+        DOCKER_IMAGE  = "danielwork6688/django-todo-app"
+        ANSIBLE_SERVER = "20.195.40.198"
+        ANSIBLE_USER   = "azureuser"
     }
 
     stages {
@@ -46,29 +46,18 @@ pipeline {
             }
         }
 
-stage('CD: Deploy to App Server') {
-    steps {
-        sshagent(['appserver-ssh-key']) {
-            sh """
-                ssh -o StrictHostKeyChecking=no ${APP_USER}@${APP_SERVER} '
-                    docker pull danielwork6688/django-todo-app:latest
-
-                    docker stop todo-app 2>/dev/null || true
-                    docker rm todo-app 2>/dev/null || true
-
-                    docker run -d \
-                        --name todo-app \
-                        --restart unless-stopped \
-                        -p 127.0.0.1:8000:8000 \
-                        danielwork6688/django-todo-app:latest
-
-                    docker image prune -f
-                    echo Deploy xong!
-                '
-            """
+        stage('CD: Deploy via Ansible') {
+            steps {
+                sshagent(['ansible-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${ANSIBLE_USER}@${ANSIBLE_SERVER} '
+                            cd ~/ansible
+                            ansible-playbook playbooks/deploy.yml
+                        '
+                    """
+                }
+            }
         }
-    }
-}
     }
 
     post {
